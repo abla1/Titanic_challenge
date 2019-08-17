@@ -1,12 +1,13 @@
 <<<<<<< HEAD
+####################################################################################################
+
+# 					Packages Imports
+
+############################################################################################################ Imports ########
 import numpy
 import pandas
 import seaborn
 import matplotlib.pyplot
-=======
-<<<<<<< HEAD
-[Code goes here]
-######## Imports ########
 from tqdm import tqdm
 import pandas as pd
 import numpy as np
@@ -41,27 +42,15 @@ from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.model_selection import KFold
 from sklearn.model_selection import cross_val_score
 k_fold = KFold(n_splits=10, shuffle=True, random_state=0)
-#######Import Data##########
+####################################################################################################
+
+# 					Loading Data
+
+####################################################################################################
 TrainFile = pd.read_csv(r"C:\Users\enam1\Documents\dataanalysis\Titanic\titanic_train.csv")
 TestFile = pd.read_csv(r"C:\Users\enam1\Documents\dataanalysis\Titanic\titanic_test.csv")
-######## Data Discovery#########
-=======
-import numpy as np # linear algebra
-import pandas as pd # data processing, CSV file I/O (e.g. pd.read_csv)
-import seaborn as sns
-import matplotlib.pyplot as plt
->>>>>>> fe3e175464ba66be8fa404d664c5eb07946a53f1
 
-from sklearn.preprocessing import Imputer
-
-# Input data files are available in the "../input/" directory.
-# For example, running this (by clicking run or pressing Shift+Enter) will list the files in the input directory
-
-#Read the csv files and display the first 5 rows  of the training set
-training_data = pandas.read_csv('../titanic_train.csv')
-test_data = pandas.read_csv('../titanic_test.csv')
-
-
+full_data = [TrainFile, TestFile]
 ####################################################################################################
 
 # 					Observation phase
@@ -69,22 +58,139 @@ test_data = pandas.read_csv('../titanic_test.csv')
 ####################################################################################################
 
 training_data.head()
+TrainFile.info()
+TrainFile.describe()
 
-#Now we take a look at the features and the missing data in each column
-print('features in training set: \n')
-training_data.info()
+
+## Looking at how many values are missing
+print('\033[1m'+"Checking if train_df contains any null value:-"+'\033[0m')
+print(TrainFile.isnull().sum())
 print('\n')
-print('features in testing set: \n')
-test_data.info()
+print('\033[1m'+"Checking if test_df contains any null value:-"+'\033[0m')
+print(TestFile.isnull().sum())
 
-#This is the description of the dataset
-training_data.describe()
 
-g = seaborn.FacetGrid(training_data, col='Survived')
-g.map(matplotlib.pyplot.hist, 'Age', bins=50)
-#The number of males are bigger than the number of females but it seems that womens are more likely to survive
-print(training_data.groupby(['Survived','Sex'])['Survived'].count())
-training_data['Sex'].value_counts().plot.bar()
+#Pairing for any relationships visible
+g = sns.pairplot(TrainFile[[u'Survived', u'Pclass', u'Sex', u'Age', u'Parch', u'Fare', u'Embarked',
+       u'SibSp']], hue='Survived', palette = 'seismic',size=1.2,diag_kind = 'kde',diag_kws=dict(shade=True),plot_kws=dict(s=10) )
+g.set(xticklabels=[])
+
+
+##Another form of correlation for visualization
+sns.heatmap(TrainFile.corr(),annot=True,cmap='RdYlGn',linewidths=0.2) #data.corr()-->correlation matrix
+fig=plt.gcf()
+fig.set_size_inches(10,8)
+plt.show()
+
+## Looking at Age vs Survived
+facet = sns.FacetGrid(TrainFile, hue="Survived",aspect=4)
+facet.map(sns.kdeplot,'Age',shade= True)
+facet.set(xlim=(0, TrainFile['Age'].max()))
+facet.add_legend()
+plt.show()
+
+Lived = TrainFile[TrainFile["Survived"] == 1]
+Died = TrainFile[TrainFile["Survived"] == 0]
+Lived["Age"].plot.hist(alpha=0.5,color='green',bins=30)
+Died["Age"].plot.hist(alpha=0.5,color='red',bins=30)
+plt.legend(['Lived','Died'])
+plt.show()
+
+
+## Looking at Fare vs Survived
+Lived["Fare"].plot.hist(alpha=0.5,color='green',bins=30)
+Died["Fare"].plot.hist(alpha=0.5,color='red',bins=30)
+plt.legend(['Lived','Died'])
+plt.show()
+
+facet = sns.FacetGrid(TrainFile, hue="Survived",aspect=4)
+facet.map(sns.kdeplot,'Fare',shade= True)
+facet.set(xlim=(0, TrainFile['Fare'].max()))
+facet.add_legend()
+plt.show()
+
+##Zooming in to see graph for first 200
+facet = sns.FacetGrid(TrainFile, hue="Survived",aspect=4)
+facet.map(sns.kdeplot,'Fare',shade= True)
+facet.set(xlim=(0, TrainFile['Fare'].max()))
+facet.add_legend()
+plt.xlim(0, 200)
+
+######Family
+Lived["SibSp"].plot.hist(alpha=0.5,color='green',bins=30)
+Died["SibSp"].plot.hist(alpha=0.5,color='red',bins=30)
+plt.legend(['Lived','Died'])
+plt.show()
+
+
+Lived["Parch"].plot.hist(alpha=0.5,color='green',bins=30)
+Died["Parch"].plot.hist(alpha=0.5,color='red',bins=30)
+plt.legend(['Lived','Died'])
+plt.show()
+
+##Since values are messy, adapting data here by adding both sibs and parch to make family size
+##Make family size from parents and siblings data
+TrainFile["FamilySize"] = TrainFile["SibSp"] + TrainFile["Parch"] + 1
+TestFile["FamilySize"] = TestFile["SibSp"] + TestFile["Parch"] + 1
+
+facet = sns.FacetGrid(TrainFile, hue="Survived",aspect=4)
+facet.map(sns.kdeplot,'FamilySize',shade= True)
+facet.set(xlim=(0, TrainFile['FamilySize'].max()))
+facet.add_legend()
+plt.show()
+
+############ Gender
+TrainFile["Survived"].value_counts().plot.pie(figsize = (4, 4),
+                                        autopct= '%.2f',
+                                        fontsize = 10,
+                                        title = "Pie Chart of Survival on Ship")
+										
+										
+sns.countplot(x="Survived", hue="Sex", data=TrainFile)
+
+facet = sns.FacetGrid(TrainFile, hue="Survived",aspect=4)
+facet.map(sns.kdeplot,'Sex',shade= True)
+facet.set(xlim=(0, TrainFile['Sex'].max()))
+facet.add_legend()
+plt.show()
+
+##Embarking Location
+:
+TrainFile["Embarked"].describe()
+
+
+facet = sns.FacetGrid(TrainFile, hue="Survived",aspect=4)
+facet.map(sns.kdeplot,'Embarked',shade= True)
+facet.set(xlim=(0, TrainFile['Embarked'].max()))
+facet.add_legend()
+plt.show()
+
+
+##Cabin
+facet = sns.FacetGrid(TrainFile, hue="Survived",aspect=4)
+facet.map(sns.kdeplot,'Cabin',shade= True)
+facet.set(xlim=(0, TrainFile['Cabin'].max()))
+facet.add_legend()
+plt.show()
+
+##Title
+##Have to translate and label to get values for observation
+TrainFile['Title'] = TrainFile['Name'].str.split(', ', expand=True)[1].str.split('. ', expand=True)[0]
+TestFile['Title'] = TestFile['Name'].str.split(', ', expand=True)[1].str.split('. ', expand=True)[0]
+
+TrainFile['Title'].value_counts().plot.bar()
+
+TrainFile[TrainFile['Title'] == 'Mr']['Survived'].value_counts()
+
+TrainFile[TrainFile['Title'] == 'Miss']['Survived'].value_counts()
+
+facet = sns.FacetGrid(TrainFile, hue="Survived",aspect=4)
+facet.map(sns.kdeplot,'Title',shade= True)
+facet.set(xlim=(0, TrainFile['Title'].max()))
+facet.add_legend()
+plt.show()
+
+
 
 ####################################################################################################
 
@@ -92,58 +198,39 @@ training_data['Sex'].value_counts().plot.bar()
 
 ####################################################################################################
 
-#Females are privileged over mans, they have bigger survival rates
-training_data[['Sex', 'Survived']].groupby(['Sex'], as_index=False).mean()
+##Gender
+num = LabelEncoder()
+TrainFile["Sex"] = num.fit_transform(TrainFile["Sex"].astype("str"))
+TestFile["Sex"] = num.fit_transform(TestFile["Sex"].astype("str"))
 
-seaborn.factorplot('Sex', 'Survived', data = training_data, kind='bar')
 
-#Encode categorical variables to numbers, that is for mathematical equations of the model that we gonna use(logistic_regression)
-#But it is possible to not map them to numbers and use algorithms like decision trees or random forests
-training_data.loc[training_data['Sex'] == 'male', 'Sex'] = 0
-training_data.loc[training_data['Sex'] == 'female', 'Sex'] = 1
 
-test_data.loc[test_data['Sex'] == 'male', 'Sex'] = 0
-test_data.loc[test_data['Sex'] == 'female', 'Sex'] = 1
+##AGE
+print('Highest Age:',TrainFile['Age'].max(),'   Lowest Age:',TrainFile['Age'].min())
+TestFile['Age'].fillna(TestFile['Age'].median(), inplace = True)
+TrainFile['Age'].fillna(TrainFile['Age'].median(), inplace = True)
 
-#The higher ticket class passengers have, the higher chances they have to survive
-print(training_data[['Pclass', 'Survived']].groupby(['Pclass'], as_index=False).mean().sort_values(by='Survived', ascending=False))
-pandas.crosstab(training_data['Pclass'],training_data['Survived'],margins=True).style.background_gradient(cmap='summer_r')
 
-#Here we create a new feature called : Family = Parch + SibSp
-training_data['Family'] = training_data['Parch'] + training_data['SibSp']
-test_data['Family'] = test_data['Parch'] + test_data['SibSp']
+###33##FARE
+## Only test file had missing values
+TestFile['Fare'].fillna(TestFile['Fare'].median(), inplace = True)
 
-#We drop the features: Parch and SibSp: they are no longer useful
-training_data = training_data.drop(['Parch'], axis = 1)
-training_data = training_data.drop(['SibSp'], axis = 1)
-test_data = test_data.drop(['Parch'], axis = 1)
-test_data = test_data.drop(['SibSp'], axis = 1)
+#######Family Members
+#No adaptation needed
 
-#When a passenger has a big family, he has less chances to survive
-training_data[['Family', 'Survived']].groupby(['Family'], as_index=False).sum().sort_values(by='Survived', ascending=False)
+##Embarked
+for dataset in full_data:
+    dataset['Embarked'] = dataset['Embarked'].fillna('S')
+	
 
-#We continue by dropping the Ticket feature and the Cabin feature
-training_data = training_data.drop(['Ticket'], axis = 1)
-training_data = training_data.drop(['Cabin'], axis = 1)
+	
+######Cabin
+for dataset in full_data:
+    dataset['Cabin'] = dataset['Cabin'].str[:1]
+    
+TestFile['Cabin'].fillna(TestFile['Cabin'].median(), inplace = True)
+TrainFile['Cabin'].fillna(TrainFile['Cabin'].median(), inplace = True)
 
-test_data = test_data.drop(['Ticket'], axis = 1)
-test_data= test_data.drop(['Cabin'], axis = 1)
-
-#The port of embarkation is an important feature to decide whether the passenger will survive or not
-training_data[['Embarked', 'Survived']].groupby(['Embarked'], as_index = False).mean()
-
-print('The minimum value in the fare feature is {}'.format(training_data['Fare'].min()))
-print('The maximum value in the fare feature is {}'.format(training_data['Fare'].max()))
-print('The mean value in the fare feature is {}'.format(training_data['Fare'].mean()))
-
-#Feature scaling / Mean Normalization
-training_data['Fare'] = (training_data['Fare'] - training_data['Fare'].mean())/training_data['Fare'].std()
-test_data['Fare'] = (test_data['Fare'] - test_data['Fare'].mean())/test_data['Fare'].std()
-
-#After removing these features, it's time to fill the missing values
-imputer = Imputer(missing_values = numpy.nan, strategy = 'median', axis = 0)
-training_data[['Age']] = imputer.fit_transform(training_data[['Age']])
-test_data[['Age']] = imputer.fit_transform(test_data[['Age']])
 
 ####################################################################################################
 
@@ -151,84 +238,103 @@ test_data[['Age']] = imputer.fit_transform(test_data[['Age']])
 
 ####################################################################################################
 
-training_data.loc[ training_data['Age'] <= 16, 'Age'] = 0
-training_data.loc[(training_data['Age'] > 16) & (training_data['Age'] <= 32), 'Age'] = 1
-training_data.loc[(training_data['Age'] > 32) & (training_data['Age'] <= 48), 'Age'] = 2
-training_data.loc[(training_data['Age'] > 48) & (training_data['Age'] <= 64), 'Age'] = 3
-training_data.loc[ training_data['Age'] > 64, 'Age'] = 4
+#Group Age to make it easier for classification since it looks like there is a clear delineation between the ages and what it does.
 
-test_data.loc[ test_data['Age'] <= 16, 'Age'] = 0
-test_data.loc[(test_data['Age'] > 16) & (test_data['Age'] <= 32), 'Age'] = 1
-test_data.loc[(test_data['Age'] > 32) & (test_data['Age'] <= 48), 'Age'] = 2
-test_data.loc[(test_data['Age'] > 48) & (test_data['Age'] <= 64), 'Age'] = 3
-test_data.loc[ test_data['Age'] > 64, 'Age'] = 4
+for dataset in full_data:
+    dataset.loc[ dataset['Age'] <= 16, 'Age'] = 0,
+    dataset.loc[(dataset['Age'] > 16) & (dataset['Age'] <= 26), 'Age'] = 1,
+    dataset.loc[(dataset['Age'] > 26) & (dataset['Age'] <= 36), 'Age'] = 2,
+    dataset.loc[(dataset['Age'] > 36) & (dataset['Age'] <= 62), 'Age'] = 3,
+    dataset.loc[ dataset['Age'] > 62, 'Age'] = 4
+	
+####FARE
+##Grouping and encoding
+
+for dataset in full_data:
+    dataset.loc[ dataset['Fare'] <= 17, 'Fare'] = 0,
+    dataset.loc[(dataset['Fare'] > 17) & (dataset['Fare'] <= 30), 'Fare'] = 1,
+    dataset.loc[(dataset['Fare'] > 30) & (dataset['Fare'] <= 100), 'Fare'] = 2,
+    dataset.loc[(dataset['Fare'] > 100) & (dataset['Fare'] <= 160), 'Fare'] = 3,
+    dataset.loc[ dataset['Fare'] > 160, 'Fare'] = 4
 
 
-#The embarked feature has only two missing values, we fill them with the most occured one
-only_S = training_data[training_data['Embarked'] == 'S'].count()
-print(only_S['Embarked']) #646
-only_C = training_data[training_data['Embarked'] == 'C'].count()
-print(only_C['Embarked']) #168
-only_Q = training_data[training_data['Embarked'] == 'Q'].count()
-print(only_Q['Embarked']) #77
+##Family
+family = {1: 0, 2: 0.4, 3: 0.8, 4: 1.2, 5: 1.6, 6: 2, 7: 2.4, 8: 2.8, 9: 3.2, 10: 3.6, 11: 4}
+for dataset in full_data:
+    dataset['FamilySize'] = dataset['FamilySize'].map(family)
 
-#The most occured one is 'S'
-training_data['Embarked'] = training_data['Embarked'].fillna('S')
-test_data['Embarked'] = test_data['Embarked'].fillna('S')
 
-training_data.loc[training_data['Embarked'] == 'S', 'Embarked'] = 0
-training_data.loc[training_data['Embarked'] == 'C', 'Embarked'] = 1
-training_data.loc[training_data['Embarked'] == 'Q', 'Embarked'] = 2
+##embarking
+embarked_mapping = {"S": 0, "C": 1, "Q": 2}
+for dataset in full_data:
+    dataset['Embarked'] = dataset['Embarked'].map(embarked_mapping)
+	
+	
+	
+	
+####Cabin
+for dataset in full_data:
+    dataset['Cabin'] = dataset['Cabin'].str[:1]
+    
+cabin_mapping = {"A": 0, "B": 0.4, "C": 0.8, "D": 1.2, "E": 1.6, "F": 2, "G": 2.4, "T": 2.8}
+for dataset in full_data:
+    dataset['Cabin'] = dataset['Cabin'].map(cabin_mapping)
 
-test_data.loc[test_data['Embarked'] == 'S', 'Embarked'] = 0
-test_data.loc[test_data['Embarked'] == 'C', 'Embarked'] = 1
-test_data.loc[test_data['Embarked'] == 'Q', 'Embarked'] = 2
 
-#The fare feature has missing data in the test set
-test_data[['Fare']] = imputer.fit_transform(test_data[['Fare']])
 
-#Here, we deal with the Name feature
-#We first extract the title that we save in a new feature called: 'Title' 
-#We drop the rest of the name
-training_data['Title'] = training_data['Name'].str.split(', ', expand=True)[1].str.split('. ', expand=True)[0]
-test_data['Title'] = test_data['Name'].str.split(', ', expand=True)[1].str.split('. ', expand=True)[0]
+###	Title
 
-#We don't need this feature anymore now
-training_data = training_data.drop(['Name'], axis = 1)
-test_data = test_data.drop(['Name'], axis = 1)
-#These are the all the titles of the training set and the test set
-print(training_data['Title'].unique())
-print(test_data['Title'].unique())
-
-training_data.head()
-
-print(training_data['Title'].value_counts())
-training_data['Title'].value_counts().plot.bar()
-
-training_data[training_data['Title'] == 'Mr']['Survived'].value_counts()
-
-training_data[training_data['Title'] == 'Miss']['Survived'].value_counts()
-
-training_data['Title'] = training_data['Title'].map({'Mr' : 0 , 'Master' : 3, 'Don' : 4, 'Major' : 4, 'Sir' : 4, 
+TrainFile['Title'] = TrainFile['Title'].map({'Mr' : 0 , 'Master' : 3, 'Don' : 4, 'Major' : 4, 'Sir' : 4, 
                                            'Mrs' : 2 , 'Miss' : 1, 'Mme' : 4, 'Ms' : 4, 'Lady' : 4, 'Mlle': 4, 
                                            'Rev' : 4 , 'Col' : 4, 'Capt' : 4, 'th' : 4, 'Jonkheer' : 4, 'Dr' : 4})
 
-test_data['Title'] = test_data['Title'].map({'Mr' : 0 , 'Master' : 3, 'Don' : 4, 'Major' : 4, 'Sir' : 4, 
+TestFile['Title'] = TestFile['Title'].map({'Mr' : 0 , 'Master' : 3, 'Don' : 4, 'Major' : 4, 'Sir' : 4, 
                                            'Mrs' : 2 , 'Miss' : 1, 'Mme' : 4, 'Ms' : 4, 'Lady' : 4, 'Mlle': 4, 
                                            'Rev' : 4 , 'Col' : 4, 'Capt' : 4, 'th' : 4, 'Jonkheer' : 4, 'Dr' : 4, 'Dona' : 4})
-                                         
+	
+	
 
-# Any results you write to the current directory are saved as output.
+##Cleaning up rest of data to make it ready for model classification training
+features_to_drop = ['Ticket', 'Name', 'SibSp', 'Parch']
+test_data = test.drop("PassengerId", axis=1).copy()
+train = TrainFile.drop(features_to_drop, axis=1)
+test = TestFile.drop(features_to_drop, axis=1)
+train = train.drop(['PassengerId'], axis=1)
 
-#This is how our dataset looks like now
-training_data.head()
+train_data = train.drop('Survived', axis=1)
+target = train['Survived']
 
-X_train = training_data.drop(['Survived'], axis = 1)
-Y_train = training_data[['Survived']]
-X_test = test_data
+train_data.shape, target.shape
+####################################################################################################
 
-X_train.shape, Y_train.shape, X_test.shape
-X_train.head()
+# 					Models
+
+####################################################################################################
+
+##KNN
+knn = KNeighborsClassifier(n_neighbors = 13)
+knnscore = cross_val_score(knn, train_data, target, cv=k_fold, n_jobs=1, scoring="accuracy")
+round(np.mean(knnscore)*100, 2)
+
+##Decision Tree
+Dec = DecisionTreeClassifier()
+Decscore = cross_val_score(Dec, train_data, target, cv=k_fold, n_jobs=1, scoring="accuracy")
+round(np.mean(Decscore)*100, 2)
+
+##Naiive Bayes
+NB = GaussianNB()
+NBscore = cross_val_score(NB, train_data, target, cv=k_fold, n_jobs=1, scoring="accuracy")
+round(np.mean(NBscore)*100, 2)
+
+##Random Forest
+rafo = RandomForestClassifier(n_estimators=100)
+rafoscore = cross_val_score(rafo, train_data, target, cv=k_fold, n_jobs=1, scoring="accuracy")
+round(np.mean(rafoscore)*100, 2)
+
+##SVM
+clf = SVC(kernel = 'linear')
+score = cross_val_score(clf, train_data, target, cv=k_fold, n_jobs=1, scoring="accuracy")
+round(np.mean(score)*100, 2)
 
 ####################################################################################################
 
@@ -237,19 +343,13 @@ X_train.head()
 ####################################################################################################
 
 #It's time to predict
-from sklearn.linear_model import LogisticRegression
-from sklearn.svm import SVC, LinearSVC
-from sklearn.ensemble import RandomForestClassifier
-
-logreg = LogisticRegression()
-logreg.fit(X_train, Y_train)
-
-Y_pred = logreg.predict(X_test)
-logreg.score(X_train, Y_train)
 
 svc = SVC(kernel = 'linear')
-svc.fit(X_train, Y_train)
-Y_pred2 = svc.predict(X_test)
+svc.fit(train_data, test_data)
+
+prediction = clf.predict(test_data)
+
+
 
 random_forest = RandomForestClassifier(n_estimators=100)
 random_forest.fit(X_train, Y_train)
